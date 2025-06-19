@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>随机选菜小工具</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 2em auto; padding: 1em; }
+    textarea { width: 100%; height: 200px; }
+    input[type=number] { width: 60px; }
+    button { padding: 0.5em 1em; font-size: 1em; }
+    ul { list-style: disc; padding-left: 1.5em; }
+    #result { margin-top: 1em; font-size: 1.2em; color: #2c3e50; }
+  </style>
+</head>
+<body>
+  <h1>🍱 随机选菜小工具</h1>
+
+  <p>请输入菜单列表（每行一个菜名）:</p>
+  <textarea id="menuInput" placeholder="例：\n红烧肉\n宫保鸡丁\n鱼香肉丝\n麻婆豆腐"></textarea>
+
+  <p>
+    每次随机选择 
+    <input type="number" id="count" value="2" min="1" max="100"> 个菜
+    <button onclick="pick()">开始选择</button>
+    <button onclick="clearMenu()">清空菜单</button>
+  </p>
+
+  <div id="result"></div>
+
+  <script>
+    const textarea = document.getElementById("menuInput");
+    const countInput = document.getElementById("count");
+
+    // 尝试从本地加载菜单
+    window.onload = () => {
+      const saved = localStorage.getItem("menuList");
+      if (saved) textarea.value = saved;
+    };
+
+    function pick() {
+      const lines = textarea.value.split("\n").map(s => s.trim()).filter(s => s);
+      const count = Math.min(parseInt(countInput.value), lines.length);
+      if (lines.length === 0) {
+        alert("请先输入菜单！");
+        return;
+      }
+
+      // 保存到 localStorage
+      localStorage.setItem("menuList", textarea.value);
+
+      // 随机抽取
+      const temp = [...lines];
+      const result = [];
+      for (let i = 0; i < count; i++) {
+        const index = Math.floor(Math.random() * temp.length);
+        result.push(temp.splice(index, 1)[0]);
+      }
+
+      // 显示结果
+      document.getElementById("result").innerHTML =
+        `<h2>🎉 今天可以吃：</h2><ul>${result.map(item => `<li>${item}</li>`).join("")}</ul>`;
+    }
+
+    function clearMenu() {
+      if (confirm("确定要清空菜单吗？")) {
+        textarea.value = "";
+        localStorage.removeItem("menuList");
+      }
+    }
+  </script>
+</body>
+</html>
