@@ -2,71 +2,174 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
-  <title>随机选菜小工具</title>
+  <title>今天吃什么</title>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
-    body { font-family: sans-serif; max-width: 600px; margin: 2em auto; padding: 1em; }
-    textarea { width: 100%; height: 200px; }
-    input[type=number] { width: 60px; }
-    button { padding: 0.5em 1em; font-size: 1em; }
-    ul { list-style: disc; padding-left: 1.5em; }
-    #result { margin-top: 1em; font-size: 1.2em; color: #2c3e50; }
+    body {
+      font-family: sans-serif;
+      max-width: 700px;
+      margin: 2em auto;
+      background: #f9f9f9;
+    }
+    .container {
+      background: #fff;
+      padding: 1.5em;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+    }
+    textarea {
+      width: 100%;
+      height: 180px;
+      font-family: monospace;
+    }
+    input[type=number] {
+      width: 60px;
+    }
+    button {
+      margin: 0.3em;
+      padding: 0.5em 1em;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    #result, #history {
+      margin-top: 1.5em;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 1em;
+      border-radius: 8px;
+    }
+    ul {
+      list-style: disc;
+      padding-left: 1.5em;
+    }
+    h2 {
+      margin-top: 0;
+    }
+    .history-item {
+      margin-bottom: 1em;
+      border-top: 1px dashed #ccc;
+      padding-top: 0.5em;
+    }
+    .no-history {
+      color: #888;
+    }
+    #result {
+      display: none;
+    }
   </style>
+
+  <!-- ✅ Emoji Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22><text y=%2214%22 font-size=%2216%22>🍱</text></svg>">
+
 </head>
 <body>
-  <h1>🍱 随机选菜小工具</h1>
+  <div class="container" id="main-content">
+    <h1>🍱 今天吃什么</h1>
 
-  <p>请输入菜单列表（每行一个菜名）:</p>
-  <textarea id="menuInput" placeholder="例：\n红烧肉\n宫保鸡丁\n鱼香肉丝\n麻婆豆腐"></textarea>
+    <p>请输入菜单列表（每行一个菜名）：</p>
+    <textarea id="menuInput" placeholder="例：红烧肉\n鱼香肉丝\n番茄炒蛋"></textarea>
 
-  <p>
-    每次随机选择 
-    <input type="number" id="count" value="2" min="1" max="100"> 个菜
-    <button onclick="pick()">开始选择</button>
-    <button onclick="clearMenu()">清空菜单</button>
-  </p>
+    <p>
+      每次选择
+      <input type="number" id="count" value="2" min="1" max="100"> 个菜
+    </p>
 
-  <div id="result"></div>
+    <button onclick="pick()">🎲 开始选择</button>
+    <button onclick="copyScreenshot()">📷 复制截图</button>
+
+    <div id="result"></div>
+
+    <div id="history">
+      <h2>🕘 历史记录</h2>
+      <div id="historyList" class="no-history">暂无记录</div>
+    </div>
+  </div>
 
   <script>
-    const textarea = document.getElementById("menuInput");
+    const menuInput = document.getElementById("menuInput");
     const countInput = document.getElementById("count");
+    const resultDiv = document.getElementById("result");
+    const historyList = document.getElementById("historyList");
+    const maxHistory = 5;
 
-    // 尝试从本地加载菜单
-    window.onload = () => {
+    function loadSavedMenu() {
       const saved = localStorage.getItem("menuList");
-      if (saved) textarea.value = saved;
-    };
+      if (saved) menuInput.value = saved;
+    }
 
-    function pick() {
-      const lines = textarea.value.split("\n").map(s => s.trim()).filter(s => s);
-      const count = Math.min(parseInt(countInput.value), lines.length);
-      if (lines.length === 0) {
-        alert("请先输入菜单！");
+    function loadHistory(excludeLatest = false) {
+      const history = JSON.parse(localStorage.getItem("mealHistory") || "[]");
+      updateHistoryUI(history, excludeLatest);
+    }
+
+    function updateHistoryUI(history, excludeLatest) {
+      const displayHistory = excludeLatest ? history.slice(0, history.length - 1) : history;
+      if (!displayHistory.length) {
+        historyList.innerHTML = `<div class="no-history">暂无记录</div>`;
         return;
       }
 
-      // 保存到 localStorage
-      localStorage.setItem("menuList", textarea.value);
+      historyList.innerHTML = "";
+      displayHistory.slice().reverse().forEach(item => {
+        const div = document.createElement("div");
+        div.className = "history-item";
+        div.innerHTML = `<strong>${item.time}</strong><ul>${item.items.map(x => `<li>${x}</li>`).join("")}</ul>`;
+        historyList.appendChild(div);
+      });
+    }
 
-      // 随机抽取
+    function pick() {
+      const lines = menuInput.value.split("\n").map(s => s.trim()).filter(s => s);
+      const count = Math.min(parseInt(countInput.value), lines.length);
+      if (!lines.length) return alert("请先输入菜单");
+
+      localStorage.setItem("menuList", menuInput.value);
+
       const temp = [...lines];
-      const result = [];
+      const picked = [];
       for (let i = 0; i < count; i++) {
         const index = Math.floor(Math.random() * temp.length);
-        result.push(temp.splice(index, 1)[0]);
+        picked.push(temp.splice(index, 1)[0]);
       }
 
-      // 显示结果
-      document.getElementById("result").innerHTML =
-        `<h2>🎉 今天可以吃：</h2><ul>${result.map(item => `<li>${item}</li>`).join("")}</ul>`;
+      const now = new Date().toLocaleString();
+      resultDiv.innerHTML =
+        `<h2>✅ 本次选择（${now}）：</h2><ul>${picked.map(item => `<li>${item}</li>`).join("")}</ul>`;
+      resultDiv.style.display = "block";
+
+      let history = JSON.parse(localStorage.getItem("mealHistory") || "[]");
+      history.push({ time: now, items: picked });
+      if (history.length > maxHistory) {
+        history = history.slice(history.length - maxHistory);
+      }
+      localStorage.setItem("mealHistory", JSON.stringify(history));
+
+      loadHistory(true); // 不显示刚刚这条
     }
 
-    function clearMenu() {
-      if (confirm("确定要清空菜单吗？")) {
-        textarea.value = "";
-        localStorage.removeItem("menuList");
-      }
+    async function copyScreenshot() {
+      const target = document.getElementById("main-content");
+      html2canvas(target, {
+        scrollY: -window.scrollY,
+        useCORS: true,
+        windowWidth: target.scrollWidth,
+      }).then(canvas => {
+        canvas.toBlob(blob => {
+          navigator.clipboard.write([
+            new ClipboardItem({ "image/png": blob })
+          ]).then(() => {
+            alert("✅ 页面截图已复制，可粘贴发送！");
+          }).catch(err => {
+            alert("❌ 复制失败：" + err);
+          });
+        });
+      });
     }
+
+    window.onload = function () {
+      loadSavedMenu();
+      loadHistory();
+    };
   </script>
 </body>
 </html>
