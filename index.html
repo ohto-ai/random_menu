@@ -13,14 +13,33 @@
       --muted-color: #888;
     }
 
+    /* Auto dark mode based on system preference */
     @media (prefers-color-scheme: dark) {
-      :root {
+      :root:not(.light-theme) {
         --bg-color: #1a1a1a;
         --container-bg: #2d2d2d;
         --border-color: #555;
         --text-color: #fff;
         --muted-color: #aaa;
       }
+    }
+
+    /* Manual dark theme */
+    .dark-theme {
+      --bg-color: #1a1a1a;
+      --container-bg: #2d2d2d;
+      --border-color: #555;
+      --text-color: #fff;
+      --muted-color: #aaa;
+    }
+
+    /* Manual light theme */
+    .light-theme {
+      --bg-color: #f9f9f9;
+      --container-bg: #fff;
+      --border-color: #ccc;
+      --text-color: #000;
+      --muted-color: #888;
     }
 
     body {
@@ -37,6 +56,9 @@
       border-radius: 10px;
       border: 1px solid var(--border-color);
       transition: background-color 0.3s ease, border-color 0.3s ease;
+      /* Ensure background is solid for screenshot capture */
+      box-sizing: border-box;
+      position: relative;
     }
     .header {
       display: flex;
@@ -52,7 +74,7 @@
       gap: 8px;
       align-items: center;
     }
-    #langToggle {
+    #langToggle, #themeToggle {
       margin: 0;
       padding: 8px;
       font-size: 16px;
@@ -63,7 +85,7 @@
       cursor: pointer;
       transition: background-color 0.2s ease;
     }
-    #langToggle:hover {
+    #langToggle:hover, #themeToggle:hover {
       background: var(--border-color);
     }
     .github-link {
@@ -152,6 +174,7 @@
     <div class="header">
       <h1>🍱 今天吃什么</h1>
       <div class="header-buttons">
+        <button id="themeToggle" onclick="toggleTheme()" title="Toggle Theme">🌙</button>
         <button id="langToggle" onclick="toggleLanguage()" title="Switch Language">🌐</button>
         <a href="https://github.com/ohto-ai/random_menu" target="_blank" rel="noopener noreferrer" class="github-link" title="查看源码">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -198,7 +221,8 @@
         alertNoMenu: "请先输入菜单",
         screenshotSuccess: "✅ 页面截图已复制，可粘贴发送！",
         screenshotFailed: "❌ 复制失败：",
-        githubTooltip: "查看源码"
+        githubTooltip: "查看源码",
+        themeToggleTooltip: "切换主题"
       },
       en: {
         title: "🍱 What to Eat Today",
@@ -215,12 +239,15 @@
         alertNoMenu: "Please enter menu first",
         screenshotSuccess: "✅ Screenshot copied successfully!",
         screenshotFailed: "❌ Copy failed: ",
-        githubTooltip: "View Source Code"
+        githubTooltip: "View Source Code",
+        themeToggleTooltip: "Toggle Theme"
       }
     };
 
     // Detect browser language and set current language
     let currentLang = 'zh';
+    let currentTheme = 'auto'; // 'auto', 'light', 'dark'
+
     function detectLanguage() {
       const browserLang = navigator.language || navigator.userLanguage;
       if (browserLang.startsWith('en')) {
@@ -239,6 +266,40 @@
       }
     }
 
+    function detectTheme() {
+      // Check if user has a saved theme preference
+      const savedTheme = localStorage.getItem('preferred-theme');
+      if (savedTheme && ['auto', 'light', 'dark'].includes(savedTheme)) {
+        currentTheme = savedTheme;
+      }
+      updateThemeClass();
+    }
+
+    function updateThemeClass() {
+      const root = document.documentElement;
+      root.classList.remove('light-theme', 'dark-theme');
+      
+      if (currentTheme === 'light') {
+        root.classList.add('light-theme');
+      } else if (currentTheme === 'dark') {
+        root.classList.add('dark-theme');
+      }
+      // If 'auto', no class is added, so CSS media query takes effect
+      
+      updateThemeToggleIcon();
+    }
+
+    function updateThemeToggleIcon() {
+      const themeToggle = document.getElementById('themeToggle');
+      if (currentTheme === 'light') {
+        themeToggle.textContent = '☀️';
+      } else if (currentTheme === 'dark') {
+        themeToggle.textContent = '🌙';
+      } else {
+        themeToggle.textContent = '🌓';
+      }
+    }
+
     // Get translation text
     function t(key) {
       return translations[currentLang][key] || translations.zh[key] || key;
@@ -250,6 +311,7 @@
       document.title = t('pageTitle');
       document.querySelector('h1').textContent = t('title');
       document.querySelector('.github-link').title = t('githubTooltip');
+      document.getElementById('themeToggle').title = t('themeToggleTooltip');
       
       // Update labels and placeholders
       const inputLabel = document.querySelector('p');
@@ -276,6 +338,19 @@
       if (noHistoryDiv && (noHistoryDiv.textContent.trim() === translations.zh.noHistory || noHistoryDiv.textContent.trim() === translations.en.noHistory)) {
         noHistoryDiv.textContent = t('noHistory');
       }
+    }
+
+    // Toggle theme
+    function toggleTheme() {
+      if (currentTheme === 'auto') {
+        currentTheme = 'light';
+      } else if (currentTheme === 'light') {
+        currentTheme = 'dark';
+      } else {
+        currentTheme = 'auto';
+      }
+      localStorage.setItem('preferred-theme', currentTheme);
+      updateThemeClass();
     }
 
     // Toggle language
@@ -348,15 +423,31 @@
 
     async function copyScreenshot() {
       const target = document.getElementById("main-content");
+      
+      // Get computed styles to ensure proper rendering
+      const computedStyle = window.getComputedStyle(target);
+      const bgColor = computedStyle.backgroundColor;
+      
+      // Also get the body background color as fallback
+      const bodyStyle = window.getComputedStyle(document.body);
+      const bodyBgColor = bodyStyle.backgroundColor;
+      
       html2canvas(target, {
-        scrollY: -window.scrollY,
         useCORS: true,
+        allowTaint: true,
+        scrollX: 0,
+        scrollY: 0,
         windowWidth: target.scrollWidth,
-        // Add extra padding around the screenshot area
-        x: -20,
-        y: -20,
-        width: target.scrollWidth + 40,
-        height: target.scrollHeight + 40,
+        windowHeight: target.scrollHeight,
+        width: target.scrollWidth,
+        height: target.scrollHeight,
+        backgroundColor: bgColor !== 'rgba(0, 0, 0, 0)' ? bgColor : bodyBgColor, // Use computed bg or fallback to body
+        scale: 1, // Ensure consistent scaling
+        logging: false,
+        ignoreElements: function(element) {
+          // Ignore any elements that might cause rendering issues
+          return element.tagName === 'SCRIPT' || element.tagName === 'STYLE';
+        }
       }).then(canvas => {
         canvas.toBlob(blob => {
           navigator.clipboard.write([
@@ -366,12 +457,15 @@
           }).catch(err => {
             alert(t('screenshotFailed') + err);
           });
-        });
+        }, 'image/png', 1.0);
+      }).catch(err => {
+        alert(t('screenshotFailed') + err);
       });
     }
 
     window.onload = function () {
       detectLanguage();
+      detectTheme();
       updateUILanguage();
       loadSavedMenu();
       loadHistory();
