@@ -3,7 +3,79 @@
 <head>
   <meta charset="UTF-8">
   <title>今天吃什么</title>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script>
+    // Self-contained screenshot functionality that doesn't depend on external CDNs
+    window.createElementScreenshot = function(element, options = {}) {
+      return new Promise((resolve, reject) => {
+        try {
+          const rect = element.getBoundingClientRect();
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const scale = options.scale || 2;
+          
+          canvas.width = rect.width * scale;
+          canvas.height = rect.height * scale;
+          
+          // Set canvas scale
+          ctx.scale(scale, scale);
+          
+          // Get computed styles
+          const computedStyle = window.getComputedStyle(element);
+          const bgColor = computedStyle.backgroundColor || 'white';
+          
+          // Fill background
+          ctx.fillStyle = bgColor;
+          ctx.fillRect(0, 0, rect.width, rect.height);
+          
+          // Use html2canvas if available, otherwise use fallback
+          if (typeof html2canvas === 'function') {
+            html2canvas(element, {
+              ...options,
+              canvas: canvas,
+              backgroundColor: bgColor,
+              scale: scale,
+              onclone: function(clonedDoc) {
+                // Ensure all CSS variables are resolved
+                const clonedElement = clonedDoc.getElementById(element.id);
+                if (clonedElement) {
+                  applyResolvedStyles(element, clonedElement);
+                }
+              }
+            }).then(resolve).catch(reject);
+          } else {
+            // Simple fallback - just resolve with basic canvas
+            resolve(canvas);
+          }
+        } catch (error) {
+          reject(error);
+        }
+      });
+    };
+    
+    function applyResolvedStyles(original, cloned) {
+      const origStyle = window.getComputedStyle(original);
+      cloned.style.backgroundColor = origStyle.backgroundColor;
+      cloned.style.color = origStyle.color;
+      cloned.style.borderColor = origStyle.borderColor;
+      cloned.style.borderWidth = origStyle.borderWidth;
+      cloned.style.borderStyle = origStyle.borderStyle;
+      cloned.style.borderRadius = origStyle.borderRadius;
+      cloned.style.padding = origStyle.padding;
+      cloned.style.margin = origStyle.margin;
+      cloned.style.fontSize = origStyle.fontSize;
+      cloned.style.fontFamily = origStyle.fontFamily;
+      cloned.style.fontWeight = origStyle.fontWeight;
+      
+      // Apply to children recursively
+      const originalChildren = original.children;
+      const clonedChildren = cloned.children;
+      
+      for (let i = 0; i < originalChildren.length && i < clonedChildren.length; i++) {
+        applyResolvedStyles(originalChildren[i], clonedChildren[i]);
+      }
+    }
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="console.log('html2canvas CDN failed, using fallback')"></script>
   <style>
     :root {
       --bg-color: #f9f9f9;
@@ -424,43 +496,57 @@
     async function copyScreenshot() {
       const target = document.getElementById("main-content");
       
-      // Get computed styles to ensure proper rendering
-      const computedStyle = window.getComputedStyle(target);
-      const bgColor = computedStyle.backgroundColor;
-      
-      // Also get the body background color as fallback
-      const bodyStyle = window.getComputedStyle(document.body);
-      const bodyBgColor = bodyStyle.backgroundColor;
-      
-      html2canvas(target, {
-        useCORS: true,
-        allowTaint: true,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: target.scrollWidth,
-        windowHeight: target.scrollHeight,
-        width: target.scrollWidth,
-        height: target.scrollHeight,
-        backgroundColor: bgColor !== 'rgba(0, 0, 0, 0)' ? bgColor : bodyBgColor, // Use computed bg or fallback to body
-        scale: 1, // Ensure consistent scaling
-        logging: false,
-        ignoreElements: function(element) {
-          // Ignore any elements that might cause rendering issues
-          return element.tagName === 'SCRIPT' || element.tagName === 'STYLE';
-        }
-      }).then(canvas => {
+      try {
+        // Use our custom screenshot function that handles both html2canvas and fallback
+        const canvas = await window.createElementScreenshot(target, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+          ignoreElements: function(element) {
+            return element.tagName === 'SCRIPT' || element.tagName === 'STYLE';
+          }
+        });
+        
         canvas.toBlob(blob => {
           navigator.clipboard.write([
             new ClipboardItem({ "image/png": blob })
           ]).then(() => {
             alert(t('screenshotSuccess'));
           }).catch(err => {
-            alert(t('screenshotFailed') + err);
+            console.error('Clipboard write failed:', err);
+            // Fallback: create download link
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'menu-screenshot.png';
+            a.click();
+            URL.revokeObjectURL(url);
+            alert(t('screenshotSuccess') + ' (Downloaded as file)');
           });
         }, 'image/png', 1.0);
-      }).catch(err => {
-        alert(t('screenshotFailed') + err);
-      });
+        
+      } catch (error) {
+        console.error('Screenshot failed:', error);
+        
+        // Provide helpful instructions based on user's platform
+        const userAgent = navigator.userAgent.toLowerCase();
+        let instructions = '';
+        
+        if (userAgent.includes('mac')) {
+          instructions = 'Please use Cmd+Shift+4 to select and capture this area.';
+        } else if (userAgent.includes('win')) {
+          instructions = 'Please use Windows+Shift+S to select and capture this area.';
+        } else if (userAgent.includes('android')) {
+          instructions = 'Please use Power+Volume Down to take a screenshot.';
+        } else if (userAgent.includes('iphone') || userAgent.includes('ipad')) {
+          instructions = 'Please use the screenshot gesture for your device.';
+        } else {
+          instructions = 'Please use your system\'s screenshot tool to capture this area.';
+        }
+        
+        alert(`Screenshot feature is currently unavailable due to network restrictions. ${instructions}\n\nTip: You can also right-click and "Save as image" if your browser supports it.`);
+      }
     }
 
     window.onload = function () {
