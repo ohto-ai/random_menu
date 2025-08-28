@@ -338,6 +338,15 @@
       if (noHistoryDiv && (noHistoryDiv.textContent.trim() === translations.zh.noHistory || noHistoryDiv.textContent.trim() === translations.en.noHistory)) {
         noHistoryDiv.textContent = t('noHistory');
       }
+      
+      // Update existing result title if it exists
+      const resultTitle = document.querySelector('#result h2');
+      if (resultTitle) {
+        const timeMatch = resultTitle.textContent.match(/\(([^)]+)\)/);
+        if (timeMatch) {
+          resultTitle.textContent = t('resultTitle').replace('{time}', timeMatch[1]);
+        }
+      }
     }
 
     // Toggle theme
