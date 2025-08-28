@@ -163,6 +163,51 @@
     #result {
       display: none;
     }
+    
+    /* Auto-save status indicator */
+    .textarea-container {
+      position: relative;
+    }
+    
+    .save-status {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      font-size: 12px;
+      color: var(--muted-color);
+      background: var(--container-bg);
+      padding: 2px 6px;
+      border-radius: 3px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    .save-status.show {
+      opacity: 1;
+    }
+    
+    .save-status.saving {
+      color: #007acc;
+    }
+    
+    .save-status.saved {
+      color: #28a745;
+    }
+    
+    /* Spinning animation for saving status */
+    .save-status.saving::before {
+      content: "⟳";
+      display: inline-block;
+      margin-right: 4px;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
   </style>
 
   <!-- ✅ Emoji Favicon -->
@@ -172,11 +217,11 @@
 <body>
   <div class="container" id="main-content">
     <div class="header">
-      <h1>🍱 今天吃什么</h1>
+      <h1 id="title">🍱 今天吃什么</h1>
       <div class="header-buttons">
         <button id="themeToggle" onclick="toggleTheme()" title="Toggle Theme">🌙</button>
         <button id="langToggle" onclick="toggleLanguage()" title="Switch Language">🌐</button>
-        <a href="https://github.com/ohto-ai/random_menu" target="_blank" rel="noopener noreferrer" class="github-link" title="查看源码">
+        <a href="https://github.com/ohto-ai/random_menu" target="_blank" rel="noopener noreferrer" class="github-link" id="githubTooltip" title="查看源码">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
           </svg>
@@ -184,20 +229,24 @@
       </div>
     </div>
 
-    <p>请输入菜单列表（每行一个菜名）：</p>
-    <textarea id="menuInput" placeholder="例：红烧肉\n鱼香肉丝\n番茄炒蛋"></textarea>
+    <p id="inputLabel">请输入菜单列表（每行一个菜名）：</p>
+    <div class="textarea-container">
+      <textarea id="menuInput" placeholder="例：红烧肉\n鱼香肉丝\n番茄炒蛋"></textarea>
+      <div class="save-status" id="saveStatus"></div>
+    </div>
 
-    <p>
-      每次选择
-      <input type="number" id="count" value="2" min="1" max="100"> 个菜
+    <p id="countText">
+      <span id="countPrefix">每次选择</span>
+      <input type="number" id="count" value="2" min="1" max="100"> 
+      <span id="countSuffix">个菜</span>
     </p>
 
-    <button onclick="pick()">🎲 开始选择</button>
+    <button id="startButton" onclick="pick()">🎲 开始选择</button>
 
     <div id="result"></div>
 
     <div id="history">
-      <h2>🕘 历史记录</h2>
+      <h2 id="historyTitle">🕘 历史记录</h2>
       <div id="historyList" class="no-history">暂无记录</div>
     </div>
   </div>
@@ -218,7 +267,9 @@
         resultTitle: "✅ 本次选择（{time}）：",
         alertNoMenu: "请先输入菜单",
         githubTooltip: "查看源码",
-        themeToggleTooltip: "切换主题"
+        themeToggleTooltip: "切换主题",
+        saveStatus: "保存中...",
+        savedStatus: "已保存"
       },
       en: {
         title: "🍱 What to Eat Today",
@@ -233,7 +284,9 @@
         resultTitle: "✅ Current Selection ({time}):",
         alertNoMenu: "Please enter menu first",
         githubTooltip: "View Source Code",
-        themeToggleTooltip: "Toggle Theme"
+        themeToggleTooltip: "Toggle Theme",
+        saveStatus: "Saving...",
+        savedStatus: "Saved"
       }
     };
 
@@ -302,28 +355,25 @@
     function updateUILanguage() {
       document.documentElement.lang = currentLang;
       document.title = t('pageTitle');
-      document.querySelector('h1').textContent = t('title');
-      document.querySelector('.github-link').title = t('githubTooltip');
+      document.getElementById('title').textContent = t('title');
+      document.getElementById('githubTooltip').title = t('githubTooltip');
       document.getElementById('themeToggle').title = t('themeToggleTooltip');
       
       // Update labels and placeholders
-      const inputLabel = document.querySelector('p');
-      inputLabel.textContent = t('inputLabel');
+      document.getElementById('inputLabel').textContent = t('inputLabel');
       
       const menuInput = document.getElementById('menuInput');
       menuInput.placeholder = t('inputPlaceholder').replace(/\\n/g, '\n');
       
       // Update count text
-      const countParagraph = document.querySelectorAll('p')[1];
-      const countInput = document.getElementById('count');
-      const countValue = countInput.value;
-      countParagraph.innerHTML = `${t('countPrefix')} <input type="number" id="count" value="${countValue}" min="1" max="100"> ${t('countSuffix')}`;
+      document.getElementById('countPrefix').textContent = t('countPrefix');
+      document.getElementById('countSuffix').textContent = t('countSuffix');
       
       // Update buttons
-      document.querySelector('button[onclick="pick()"]').textContent = t('startButton');
+      document.getElementById('startButton').textContent = t('startButton');
       
       // Update history section
-      document.querySelector('#history h2').textContent = t('historyTitle');
+      document.getElementById('historyTitle').textContent = t('historyTitle');
       
       // Update no history message if it exists
       const noHistoryDiv = document.querySelector('.no-history');
@@ -413,12 +463,54 @@
       loadHistory(true); // 不显示刚刚这条
     }
 
+    // Auto-save functionality
+    let saveTimeout;
+
+    function showSaveStatus(text, className = '') {
+      const saveStatus = document.getElementById('saveStatus');
+      saveStatus.textContent = text;
+      saveStatus.className = `save-status show ${className}`;
+    }
+
+    function hideSaveStatus() {
+      const saveStatus = document.getElementById('saveStatus');
+      saveStatus.className = 'save-status';
+    }
+
+    function autoSave() {
+      // Clear any existing timeout
+      if (saveTimeout) {
+        clearTimeout(saveTimeout);
+      }
+
+      // Show saving status immediately
+      showSaveStatus(t('saveStatus'), 'saving');
+
+      // Set a timeout to save after user stops typing
+      saveTimeout = setTimeout(() => {
+        localStorage.setItem("menuList", menuInput.value);
+        
+        // Show saved status
+        showSaveStatus(t('savedStatus'), 'saved');
+        
+        // Hide status after 2 seconds
+        setTimeout(hideSaveStatus, 2000);
+      }, 800); // Wait 800ms after user stops typing
+    }
+
+    // Setup auto-save listeners
+    function setupAutoSave() {
+      menuInput.addEventListener('input', autoSave);
+      menuInput.addEventListener('paste', autoSave);
+    }
+
     window.onload = function () {
       detectLanguage();
       detectTheme();
       updateUILanguage();
       loadSavedMenu();
       loadHistory();
+      setupAutoSave();
     };
   </script>
 </body>
