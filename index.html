@@ -47,6 +47,25 @@
     .header h1 {
       margin: 0;
     }
+    .header-buttons {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    #langToggle {
+      margin: 0;
+      padding: 8px;
+      font-size: 16px;
+      background: var(--container-bg);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    #langToggle:hover {
+      background: var(--border-color);
+    }
     .github-link {
       color: var(--text-color);
       text-decoration: none;
@@ -132,11 +151,14 @@
   <div class="container" id="main-content">
     <div class="header">
       <h1>🍱 今天吃什么</h1>
-      <a href="https://github.com/ohto-ai/random_menu" target="_blank" rel="noopener noreferrer" class="github-link" title="查看源码">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-        </svg>
-      </a>
+      <div class="header-buttons">
+        <button id="langToggle" onclick="toggleLanguage()" title="Switch Language">🌐</button>
+        <a href="https://github.com/ohto-ai/random_menu" target="_blank" rel="noopener noreferrer" class="github-link" title="查看源码">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+          </svg>
+        </a>
+      </div>
     </div>
 
     <p>请输入菜单列表（每行一个菜名）：</p>
@@ -159,6 +181,110 @@
   </div>
 
   <script>
+    // Translation system
+    const translations = {
+      zh: {
+        title: "🍱 今天吃什么",
+        pageTitle: "今天吃什么",
+        inputLabel: "请输入菜单列表（每行一个菜名）：",
+        inputPlaceholder: "例：红烧肉\\n鱼香肉丝\\n番茄炒蛋",
+        countPrefix: "每次选择",
+        countSuffix: "个菜",
+        startButton: "🎲 开始选择",
+        screenshotButton: "📷 复制截图",
+        historyTitle: "🕘 历史记录",
+        noHistory: "暂无记录",
+        resultTitle: "✅ 本次选择（{time}）：",
+        alertNoMenu: "请先输入菜单",
+        screenshotSuccess: "✅ 页面截图已复制，可粘贴发送！",
+        screenshotFailed: "❌ 复制失败：",
+        githubTooltip: "查看源码"
+      },
+      en: {
+        title: "🍱 What to Eat Today",
+        pageTitle: "What to Eat Today",
+        inputLabel: "Please enter menu list (one dish per line):",
+        inputPlaceholder: "e.g.: Braised Pork\\nFish-flavored Pork\\nScrambled Eggs with Tomato",
+        countPrefix: "Select",
+        countSuffix: "dishes each time",
+        startButton: "🎲 Start Selection",
+        screenshotButton: "📷 Copy Screenshot",
+        historyTitle: "🕘 History",
+        noHistory: "No records",
+        resultTitle: "✅ Current Selection ({time}):",
+        alertNoMenu: "Please enter menu first",
+        screenshotSuccess: "✅ Screenshot copied successfully!",
+        screenshotFailed: "❌ Copy failed: ",
+        githubTooltip: "View Source Code"
+      }
+    };
+
+    // Detect browser language and set current language
+    let currentLang = 'zh';
+    function detectLanguage() {
+      const browserLang = navigator.language || navigator.userLanguage;
+      if (browserLang.startsWith('en')) {
+        currentLang = 'en';
+      } else if (browserLang.startsWith('zh')) {
+        currentLang = 'zh';
+      } else {
+        // Default to English for other languages
+        currentLang = 'en';
+      }
+      
+      // Check if user has a saved language preference
+      const savedLang = localStorage.getItem('preferred-language');
+      if (savedLang && translations[savedLang]) {
+        currentLang = savedLang;
+      }
+    }
+
+    // Get translation text
+    function t(key) {
+      return translations[currentLang][key] || translations.zh[key] || key;
+    }
+
+    // Update all UI text
+    function updateUILanguage() {
+      document.documentElement.lang = currentLang;
+      document.title = t('pageTitle');
+      document.querySelector('h1').textContent = t('title');
+      document.querySelector('.github-link').title = t('githubTooltip');
+      
+      // Update labels and placeholders
+      const inputLabel = document.querySelector('p');
+      inputLabel.textContent = t('inputLabel');
+      
+      const menuInput = document.getElementById('menuInput');
+      menuInput.placeholder = t('inputPlaceholder').replace(/\\n/g, '\n');
+      
+      // Update count text
+      const countParagraph = document.querySelectorAll('p')[1];
+      const countInput = document.getElementById('count');
+      const countValue = countInput.value;
+      countParagraph.innerHTML = `${t('countPrefix')} <input type="number" id="count" value="${countValue}" min="1" max="100"> ${t('countSuffix')}`;
+      
+      // Update buttons
+      document.querySelector('button[onclick="pick()"]').textContent = t('startButton');
+      document.querySelector('button[onclick="copyScreenshot()"]').textContent = t('screenshotButton');
+      
+      // Update history section
+      document.querySelector('#history h2').textContent = t('historyTitle');
+      
+      // Update no history message if it exists
+      const noHistoryDiv = document.querySelector('.no-history');
+      if (noHistoryDiv && (noHistoryDiv.textContent.trim() === translations.zh.noHistory || noHistoryDiv.textContent.trim() === translations.en.noHistory)) {
+        noHistoryDiv.textContent = t('noHistory');
+      }
+    }
+
+    // Toggle language
+    function toggleLanguage() {
+      currentLang = currentLang === 'zh' ? 'en' : 'zh';
+      localStorage.setItem('preferred-language', currentLang);
+      updateUILanguage();
+    }
+
     const menuInput = document.getElementById("menuInput");
     const countInput = document.getElementById("count");
     const resultDiv = document.getElementById("result");
@@ -178,7 +304,7 @@
     function updateHistoryUI(history, excludeLatest) {
       const displayHistory = excludeLatest ? history.slice(0, history.length - 1) : history;
       if (!displayHistory.length) {
-        historyList.innerHTML = `<div class="no-history">暂无记录</div>`;
+        historyList.innerHTML = `<div class="no-history">${t('noHistory')}</div>`;
         return;
       }
 
@@ -194,7 +320,7 @@
     function pick() {
       const lines = menuInput.value.split("\n").map(s => s.trim()).filter(s => s);
       const count = Math.min(parseInt(countInput.value), lines.length);
-      if (!lines.length) return alert("请先输入菜单");
+      if (!lines.length) return alert(t('alertNoMenu'));
 
       localStorage.setItem("menuList", menuInput.value);
 
@@ -207,7 +333,7 @@
 
       const now = new Date().toLocaleString();
       resultDiv.innerHTML =
-        `<h2>✅ 本次选择（${now}）：</h2><ul>${picked.map(item => `<li>${item}</li>`).join("")}</ul>`;
+        `<h2>${t('resultTitle').replace('{time}', now)}</h2><ul>${picked.map(item => `<li>${item}</li>`).join("")}</ul>`;
       resultDiv.style.display = "block";
 
       let history = JSON.parse(localStorage.getItem("mealHistory") || "[]");
@@ -236,15 +362,17 @@
           navigator.clipboard.write([
             new ClipboardItem({ "image/png": blob })
           ]).then(() => {
-            alert("✅ 页面截图已复制，可粘贴发送！");
+            alert(t('screenshotSuccess'));
           }).catch(err => {
-            alert("❌ 复制失败：" + err);
+            alert(t('screenshotFailed') + err);
           });
         });
       });
     }
 
     window.onload = function () {
+      detectLanguage();
+      updateUILanguage();
       loadSavedMenu();
       loadHistory();
     };
