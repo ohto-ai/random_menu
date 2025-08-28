@@ -380,6 +380,19 @@
       if (noHistoryDiv && (noHistoryDiv.textContent.trim() === translations.zh.noHistory || noHistoryDiv.textContent.trim() === translations.en.noHistory)) {
         noHistoryDiv.textContent = t('noHistory');
       }
+      
+      // Update result section if it exists
+      if (resultDiv && resultDiv.innerHTML && resultDiv.style.display !== 'none') {
+        const h2 = resultDiv.querySelector('h2');
+        if (h2) {
+          // Extract timestamp from existing h2 text (handle both () and （） parentheses)
+          const timeMatch = h2.textContent.match(/[\(（]([^)）]+)[\)）]/);
+          if (timeMatch) {
+            const time = timeMatch[1];
+            h2.textContent = t('resultTitle').replace('{time}', time);
+          }
+        }
+      }
     }
 
     // Toggle theme
