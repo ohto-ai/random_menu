@@ -426,6 +426,11 @@
       if (saved) menuInput.value = saved;
     }
 
+    function loadSavedCount() {
+      const saved = localStorage.getItem("dishCount");
+      if (saved) countInput.value = saved;
+    }
+
     function loadHistory(excludeLatest = false) {
       const history = JSON.parse(localStorage.getItem("mealHistory") || "[]");
       updateHistoryUI(history, excludeLatest);
@@ -511,10 +516,16 @@
       }, 800); // Wait 800ms after user stops typing
     }
 
+    function saveCount() {
+      localStorage.setItem("dishCount", countInput.value);
+    }
+
     // Setup auto-save listeners
     function setupAutoSave() {
       menuInput.addEventListener('input', autoSave);
       menuInput.addEventListener('paste', autoSave);
+      countInput.addEventListener('change', saveCount);
+      countInput.addEventListener('input', saveCount);
     }
 
     window.onload = function () {
@@ -522,6 +533,7 @@
       detectTheme();
       updateUILanguage();
       loadSavedMenu();
+      loadSavedCount();
       loadHistory();
       setupAutoSave();
     };
