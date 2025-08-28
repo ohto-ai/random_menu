@@ -11,7 +11,6 @@ A simple, elegant web application that helps you decide what to eat by randomly 
 - **📱 Responsive Design**: Works perfectly on desktop and mobile devices
 - **🌙 Dark Mode**: Automatic dark/light theme based on system preferences
 - **💾 Auto Save**: Automatically saves your menu list and selection history
-- **📷 Screenshot**: One-click screenshot sharing functionality
 - **🕘 History**: Keeps track of your recent selections (last 5 entries)
 
 ---
@@ -21,7 +20,6 @@ A simple, elegant web application that helps you decide what to eat by randomly 
 - **📱 响应式设计**: 在桌面和移动设备上完美工作
 - **🌙 暗黑模式**: 基于系统偏好自动切换明暗主题
 - **💾 自动保存**: 自动保存菜单列表和选择历史
-- **📷 截图分享**: 一键截图分享功能
 - **🕘 历史记录**: 记录最近的选择（最多5条记录）
 
 ## 🚀 Live Demo / 在线演示
@@ -43,14 +41,12 @@ Visit / 访问: [https://ohto-ai.github.io/random_menu/](https://ohto-ai.github.
 2. **Set Quantity**: Choose how many dishes to select (1-100)
 3. **Click "Start Selection"**: The app will randomly pick dishes from your list
 4. **Toggle Language**: Use the 🌐 button to switch between Chinese and English
-5. **Share Results**: Use the 📷 button to copy a screenshot of your selection
 
 ### 中文
 1. **输入菜单**: 在文本框中每行添加一个菜品
 2. **设置数量**: 选择要选出多少个菜品（1-100个）
 3. **点击"开始选择"**: 应用会从你的列表中随机选择菜品
 4. **切换语言**: 使用 🌐 按钮在中英文之间切换
-5. **分享结果**: 使用 📷 按钮复制选择结果的截图
 
 ## 🎯 How It Works / 工作原理
 
@@ -86,8 +82,7 @@ for (let i = 0; i < count; i++) {
 - **Storage**: localStorage for menu lists, selection history, and language preference
 - **Responsive**: CSS Grid and Flexbox for adaptive layouts
 - **Theme**: CSS custom properties with prefers-color-scheme media query
-- **Screenshot**: html2canvas library for capturing and sharing functionality
-- **No Dependencies**: Except for html2canvas, everything is built with web standards
+- **No Dependencies**: Everything is built with web standards
 
 ## 🎨 Customization / 自定义
 
@@ -123,7 +118,6 @@ This project is open source and available under the [MIT License](LICENSE).
 ## 🙏 Acknowledgments / 致谢
 
 - Icons: Emoji (native browser support)
-- Screenshot functionality: [html2canvas](https://github.com/niklasvh/html2canvas)
 - Inspiration: The daily struggle of "what should I eat today?" 
 
 ---
