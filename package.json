@@ -1,0 +1,31 @@
+{
+  "name": "random-menu",
+  "version": "2.0.0",
+  "description": "A lightweight, dependency-free web app that randomly picks dishes from your custom menu. Bilingual (zh/en), dark mode, PWA-ready.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint . && html-validate index.html",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "serve": "npx --yes serve -l 8080 ."
+  },
+  "keywords": [
+    "random",
+    "picker",
+    "what-to-eat",
+    "wheel",
+    "menu",
+    "bilingual",
+    "pwa"
+  ],
+  "author": "OhtoAi",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^9.18.0",
+    "html-validate": "^9.0.0",
+    "prettier": "^3.4.2",
+    "serve": "^14.2.4"
+  }
+}

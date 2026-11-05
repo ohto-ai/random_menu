@@ -1,0 +1,14 @@
+{
+  "extends": ["html-validate:recommended"],
+  "rules": {
+    "no-inline-style": "off",
+    "inline-style-disabled": "off",
+    "attribute-boolean-style": "off",
+    "void-style": "off",
+    "no-trailing-whitespace": "off",
+    "doctype-style": ["error", { "style": "lowercase" }],
+    "long-title": "off",
+    "unique-landmark": "off",
+    "heading-order": "off"
+  }
+}
