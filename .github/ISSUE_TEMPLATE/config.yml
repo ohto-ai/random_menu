@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: 💬 使用问题 / Usage Questions
+    url: https://github.com/ohto-ai/random_menu/issues/new?template=bug_report.yml
+    about: >
+      使用疑问请先查阅 README；确认是缺陷请提交 Bug 报告。
+      Please read the README first; if you confirmed it is a bug, file a bug report.
