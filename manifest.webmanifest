@@ -1,0 +1,31 @@
+{
+  "name": "今天吃什么 · Random Menu",
+  "short_name": "Random Menu",
+  "description": "随机菜单选择器：输入你的菜单列表，随机决定今天吃什么。支持转盘、排除/统计抽取、防吃腻与离线使用。",
+  "lang": "zh",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f9f9f9",
+  "theme_color": "#ff9f43",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

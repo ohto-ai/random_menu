@@ -1,542 +1,146 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh">
-<head>
-  <meta charset="UTF-8">
-  <title>今天吃什么</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="随机菜单选择器：输入你的菜单列表，随机决定今天吃什么。支持转盘模式、排除/统计抽取、防吃腻、导入导出与 PWA 离线使用。Random menu picker — let the wheel decide what to eat today."
+    />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ff9f43" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1a1a1a" />
+    <title>今天吃什么</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="manifest" href="manifest.webmanifest" />
 
-  <style>
-    :root {
-      --bg-color: #f9f9f9;
-      --container-bg: #fff;
-      --border-color: #ccc;
-      --text-color: #000;
-      --muted-color: #888;
-    }
-
-    /* Auto dark mode based on system preference */
-    @media (prefers-color-scheme: dark) {
-      :root:not(.light-theme) {
-        --bg-color: #1a1a1a;
-        --container-bg: #2d2d2d;
-        --border-color: #555;
-        --text-color: #fff;
-        --muted-color: #aaa;
-      }
-    }
-
-    /* Manual dark theme */
-    .dark-theme {
-      --bg-color: #1a1a1a;
-      --container-bg: #2d2d2d;
-      --border-color: #555;
-      --text-color: #fff;
-      --muted-color: #aaa;
-    }
-
-    /* Manual light theme */
-    .light-theme {
-      --bg-color: #f9f9f9;
-      --container-bg: #fff;
-      --border-color: #ccc;
-      --text-color: #000;
-      --muted-color: #888;
-    }
-
-    body {
-      font-family: sans-serif;
-      max-width: 700px;
-      margin: 2em auto;
-      background: var(--bg-color);
-      color: var(--text-color);
-      transition: background-color 0.3s ease, color 0.3s ease;
-    }
-    .container {
-      background: var(--container-bg);
-      padding: 1.5em;
-      border-radius: 10px;
-      border: 1px solid var(--border-color);
-      transition: background-color 0.3s ease, border-color 0.3s ease;
-      /* Ensure background is solid for screenshot capture */
-      box-sizing: border-box;
-      position: relative;
-    }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1em;
-    }
-    .header h1 {
-      margin: 0;
-    }
-    .header-buttons {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-    #langToggle, #themeToggle {
-      margin: 0;
-      padding: 8px;
-      font-size: 16px;
-      background: var(--container-bg);
-      color: var(--text-color);
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-    }
-    #langToggle:hover, #themeToggle:hover {
-      background: var(--border-color);
-    }
-    .github-link {
-      color: var(--text-color);
-      text-decoration: none;
-      padding: 8px;
-      border-radius: 6px;
-      transition: background-color 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .github-link:hover {
-      background: var(--border-color);
-    }
-    textarea {
-      width: 100%;
-      height: 180px;
-      font-family: monospace;
-      background: var(--container-bg);
-      color: var(--text-color);
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
-      padding: 8px;
-      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-    }
-    input[type=number] {
-      width: 60px;
-      background: var(--container-bg);
-      color: var(--text-color);
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
-      padding: 4px;
-      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-    }
-    button {
-      margin: 0.3em;
-      padding: 0.5em 1em;
-      font-size: 1em;
-      cursor: pointer;
-      background: var(--container-bg);
-      color: var(--text-color);
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
-      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-    }
-    button:hover {
-      background: var(--border-color);
-    }
-    #result, #history {
-      margin-top: 1.5em;
-      background: var(--container-bg);
-      border: 1px solid var(--border-color);
-      padding: 1em;
-      border-radius: 8px;
-      transition: background-color 0.3s ease, border-color 0.3s ease;
-    }
-    ul {
-      list-style: disc;
-      padding-left: 1.5em;
-    }
-    h2 {
-      margin-top: 0;
-    }
-    .history-item {
-      margin-bottom: 1em;
-      border-top: 1px dashed var(--border-color);
-      padding-top: 0.5em;
-      transition: border-color 0.3s ease;
-    }
-    .no-history {
-      color: var(--muted-color);
-      transition: color 0.3s ease;
-    }
-    #result {
-      display: none;
-    }
-    
-    /* Auto-save status indicator */
-    .textarea-container {
-      position: relative;
-    }
-    
-    .save-status {
-      position: absolute;
-      top: 8px;
-      right: 12px;
-      font-size: 12px;
-      color: var(--muted-color);
-      background: var(--container-bg);
-      padding: 2px 6px;
-      border-radius: 3px;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      pointer-events: none;
-      z-index: 1;
-    }
-    
-    .save-status.show {
-      opacity: 1;
-    }
-    
-    .save-status.saving {
-      color: #007acc;
-    }
-    
-    .save-status.saved {
-      color: #28a745;
-    }
-    
-    /* Spinning animation for saving status */
-    .save-status.saving::before {
-      content: "⟳";
-      display: inline-block;
-      margin-right: 4px;
-      animation: spin 1s linear infinite;
-    }
-    
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-  </style>
-
-  <!-- ✅ Emoji Favicon -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22><text y=%2214%22 font-size=%2216%22>🍱</text></svg>">
-
-</head>
-<body>
-  <div class="container" id="main-content">
-    <div class="header">
-      <h1 id="title">🍱 今天吃什么</h1>
-      <div class="header-buttons">
-        <button id="themeToggle" onclick="toggleTheme()" title="Toggle Theme">🌙</button>
-        <button id="langToggle" onclick="toggleLanguage()" title="Switch Language">🌐</button>
-        <a href="https://github.com/ohto-ai/random_menu" target="_blank" rel="noopener noreferrer" class="github-link" id="githubTooltip" title="查看源码">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-          </svg>
-        </a>
+    <!-- ✅ Emoji Favicon -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22><text y=%2214%22 font-size=%2216%22>🍱</text></svg>"
+    />
+  </head>
+  <body>
+    <div class="container" id="main-content">
+      <div class="header">
+        <h1 id="title">🍱 今天吃什么</h1>
+        <div class="header-buttons">
+          <button id="themeToggle" type="button" title="切换主题">🌓</button>
+          <button id="langToggle" type="button" title="Switch Language">🌐</button>
+          <a
+            href="https://github.com/ohto-ai/random_menu"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="github-link"
+            id="githubTooltip"
+            title="查看源码"
+            aria-label="GitHub"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path
+                d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
+              />
+            </svg>
+          </a>
+        </div>
       </div>
+
+      <!-- App mode tabs: list / wheel -->
+      <div class="mode-tabs" role="tablist" aria-label="App mode">
+        <button id="listModeTab" type="button" role="tab" aria-selected="true">📜 列表模式</button>
+        <button id="wheelModeTab" type="button" role="tab" aria-selected="false">
+          🎡 转盘模式
+        </button>
+      </div>
+
+      <!-- ============ List mode ============ -->
+      <section id="listPanel">
+        <label id="inputLabel" for="menuInput">请输入菜单列表（每行一个菜名）：</label>
+        <div class="textarea-container">
+          <textarea id="menuInput" placeholder="例：红烧肉\n鱼香肉丝\n番茄炒蛋"></textarea>
+          <div class="save-status" id="saveStatus"></div>
+        </div>
+
+        <div class="menu-tools">
+          <div class="tool-group">
+            <label id="templateLabel" for="templateSelect">模板</label>
+            <select id="templateSelect"></select>
+            <button id="applyTemplateBtn" type="button">应用</button>
+          </div>
+          <div class="io-buttons tool-group">
+            <button id="exportBtn" type="button" title="导出菜单">📤</button>
+            <button id="importBtn" type="button" title="导入菜单">📥</button>
+            <input type="file" id="importFile" accept=".txt,text/plain" hidden />
+            <button id="shareBtn" type="button" title="复制分享链接">🔗</button>
+          </div>
+        </div>
+
+        <div class="options-row">
+          <p id="countText">
+            <label for="count"><span id="countPrefix">每次选择</span></label>
+            <input type="number" id="count" value="2" min="1" max="100" />
+            <span id="countSuffix">个菜</span>
+          </p>
+
+          <p class="pick-mode-group">
+            <label id="pickModeLabel" for="pickMode">抽取模式</label>
+            <select id="pickMode">
+              <option value="normal">普通</option>
+              <option value="elimination">排除</option>
+              <option value="accumulate">统计</option>
+            </select>
+          </p>
+
+          <p class="anti-repeat-group">
+            <input type="checkbox" id="antiRepeat" />
+            <label id="antiRepeatLabel" for="antiRepeat">防吃腻</label>
+            <input
+              type="number"
+              id="antiRepeatRange"
+              value="3"
+              min="1"
+              max="10"
+              aria-label="排除最近几次的选择"
+            />
+            <span id="antiRepeatUnit">次</span>
+          </p>
+        </div>
+
+        <button id="startButton" type="button">🎲 开始选择</button>
+
+        <div id="result"></div>
+
+        <details id="statsPanel">
+          <summary id="statsTitle">📊 统计</summary>
+          <div id="statsList"></div>
+          <div class="stats-actions">
+            <button id="clearStatsBtn" type="button">清空统计</button>
+          </div>
+        </details>
+
+        <div id="history">
+          <div class="history-header">
+            <h2 id="historyTitle">🕘 历史记录</h2>
+            <button id="clearHistoryBtn" type="button">🗑 清空</button>
+          </div>
+          <div id="historyList" class="no-history">暂无记录</div>
+        </div>
+      </section>
+
+      <!-- ============ Wheel mode ============ -->
+      <section id="wheelPanel" hidden>
+        <div class="wheel-wrap">
+          <canvas id="wheelCanvas" role="img" aria-label="Menu wheel"></canvas>
+          <div class="wheel-pointer" aria-hidden="true"></div>
+          <button id="wheelCenterBtn" type="button">🎡</button>
+        </div>
+        <p class="wheel-hint" id="wheelHint">菜单变更会自动同步到转盘</p>
+        <div id="wheelResult"></div>
+      </section>
     </div>
 
-    <p id="inputLabel">请输入菜单列表（每行一个菜名）：</p>
-    <div class="textarea-container">
-      <textarea id="menuInput" placeholder="例：红烧肉\n鱼香肉丝\n番茄炒蛋"></textarea>
-      <div class="save-status" id="saveStatus"></div>
-    </div>
+    <div id="toast" role="status"></div>
 
-    <p id="countText">
-      <span id="countPrefix">每次选择</span>
-      <input type="number" id="count" value="2" min="1" max="100"> 
-      <span id="countSuffix">个菜</span>
-    </p>
-
-    <button id="startButton" onclick="pick()">🎲 开始选择</button>
-
-    <div id="result"></div>
-
-    <div id="history">
-      <h2 id="historyTitle">🕘 历史记录</h2>
-      <div id="historyList" class="no-history">暂无记录</div>
-    </div>
-  </div>
-
-  <script>
-    // Translation system
-    const translations = {
-      zh: {
-        title: "🍱 今天吃什么",
-        pageTitle: "今天吃什么",
-        inputLabel: "请输入菜单列表（每行一个菜名）：",
-        inputPlaceholder: "例：红烧肉\\n鱼香肉丝\\n番茄炒蛋",
-        countPrefix: "每次选择",
-        countSuffix: "个菜",
-        startButton: "🎲 开始选择",
-        historyTitle: "🕘 历史记录",
-        noHistory: "暂无记录",
-        resultTitle: "✅ 本次选择（{time}）：",
-        alertNoMenu: "请先输入菜单",
-        githubTooltip: "查看源码",
-        themeToggleTooltip: "切换主题",
-        saveStatus: "保存中...",
-        savedStatus: "已保存"
-      },
-      en: {
-        title: "🍱 What to Eat Today",
-        pageTitle: "What to Eat Today",
-        inputLabel: "Please enter menu list (one dish per line):",
-        inputPlaceholder: "e.g.: Braised Pork\\nFish-flavored Pork\\nScrambled Eggs with Tomato",
-        countPrefix: "Select",
-        countSuffix: "dishes each time",
-        startButton: "🎲 Start Selection",
-        historyTitle: "🕘 History",
-        noHistory: "No records",
-        resultTitle: "✅ Current Selection ({time}):",
-        alertNoMenu: "Please enter menu first",
-        githubTooltip: "View Source Code",
-        themeToggleTooltip: "Toggle Theme",
-        saveStatus: "Saving...",
-        savedStatus: "Saved"
-      }
-    };
-
-    // Detect browser language and set current language
-    let currentLang = 'zh';
-    let currentTheme = 'auto'; // 'auto', 'light', 'dark'
-
-    function detectLanguage() {
-      const browserLang = navigator.language || navigator.userLanguage;
-      if (browserLang.startsWith('en')) {
-        currentLang = 'en';
-      } else if (browserLang.startsWith('zh')) {
-        currentLang = 'zh';
-      } else {
-        // Default to English for other languages
-        currentLang = 'en';
-      }
-      
-      // Check if user has a saved language preference
-      const savedLang = localStorage.getItem('preferred-language');
-      if (savedLang && translations[savedLang]) {
-        currentLang = savedLang;
-      }
-    }
-
-    function detectTheme() {
-      // Check if user has a saved theme preference
-      const savedTheme = localStorage.getItem('preferred-theme');
-      if (savedTheme && ['auto', 'light', 'dark'].includes(savedTheme)) {
-        currentTheme = savedTheme;
-      }
-      updateThemeClass();
-    }
-
-    function updateThemeClass() {
-      const root = document.documentElement;
-      root.classList.remove('light-theme', 'dark-theme');
-      
-      if (currentTheme === 'light') {
-        root.classList.add('light-theme');
-      } else if (currentTheme === 'dark') {
-        root.classList.add('dark-theme');
-      }
-      // If 'auto', no class is added, so CSS media query takes effect
-      
-      updateThemeToggleIcon();
-    }
-
-    function updateThemeToggleIcon() {
-      const themeToggle = document.getElementById('themeToggle');
-      if (currentTheme === 'light') {
-        themeToggle.textContent = '☀️';
-      } else if (currentTheme === 'dark') {
-        themeToggle.textContent = '🌙';
-      } else {
-        themeToggle.textContent = '🌓';
-      }
-    }
-
-    // Get translation text
-    function t(key) {
-      return translations[currentLang][key] || translations.zh[key] || key;
-    }
-
-    // Update all UI text
-    function updateUILanguage() {
-      document.documentElement.lang = currentLang;
-      document.title = t('pageTitle');
-      document.getElementById('title').textContent = t('title');
-      document.getElementById('githubTooltip').title = t('githubTooltip');
-      document.getElementById('themeToggle').title = t('themeToggleTooltip');
-      
-      // Update labels and placeholders
-      document.getElementById('inputLabel').textContent = t('inputLabel');
-      
-      const menuInput = document.getElementById('menuInput');
-      menuInput.placeholder = t('inputPlaceholder').replace(/\\n/g, '\n');
-      
-      // Update count text
-      document.getElementById('countPrefix').textContent = t('countPrefix');
-      document.getElementById('countSuffix').textContent = t('countSuffix');
-      
-      // Update buttons
-      document.getElementById('startButton').textContent = t('startButton');
-      
-      // Update history section
-      document.getElementById('historyTitle').textContent = t('historyTitle');
-      
-      // Update no history message if it exists
-      const noHistoryDiv = document.querySelector('.no-history');
-      if (noHistoryDiv && (noHistoryDiv.textContent.trim() === translations.zh.noHistory || noHistoryDiv.textContent.trim() === translations.en.noHistory)) {
-        noHistoryDiv.textContent = t('noHistory');
-      }
-      
-      // Update result section if it exists
-      if (resultDiv && resultDiv.innerHTML && resultDiv.style.display !== 'none') {
-        const h2 = resultDiv.querySelector('h2');
-        if (h2) {
-          // Extract timestamp from existing h2 text (handle both () and （） parentheses)
-          const timeMatch = h2.textContent.match(/[\(（]([^)）]+)[\)）]/);
-          if (timeMatch) {
-            const time = timeMatch[1];
-            h2.textContent = t('resultTitle').replace('{time}', time);
-          }
-        }
-      }
-    }
-
-    // Toggle theme
-    function toggleTheme() {
-      if (currentTheme === 'auto') {
-        currentTheme = 'light';
-      } else if (currentTheme === 'light') {
-        currentTheme = 'dark';
-      } else {
-        currentTheme = 'auto';
-      }
-      localStorage.setItem('preferred-theme', currentTheme);
-      updateThemeClass();
-    }
-
-    // Toggle language
-    function toggleLanguage() {
-      currentLang = currentLang === 'zh' ? 'en' : 'zh';
-      localStorage.setItem('preferred-language', currentLang);
-      updateUILanguage();
-    }
-
-    const menuInput = document.getElementById("menuInput");
-    const countInput = document.getElementById("count");
-    const resultDiv = document.getElementById("result");
-    const historyList = document.getElementById("historyList");
-    const maxHistory = 5;
-
-    function loadSavedMenu() {
-      const saved = localStorage.getItem("menuList");
-      if (saved) menuInput.value = saved;
-    }
-
-    function loadSavedCount() {
-      const saved = localStorage.getItem("dishCount");
-      if (saved) countInput.value = saved;
-    }
-
-    function loadHistory(excludeLatest = false) {
-      const history = JSON.parse(localStorage.getItem("mealHistory") || "[]");
-      updateHistoryUI(history, excludeLatest);
-    }
-
-    function updateHistoryUI(history, excludeLatest) {
-      const displayHistory = excludeLatest ? history.slice(0, history.length - 1) : history;
-      if (!displayHistory.length) {
-        historyList.innerHTML = `<div class="no-history">${t('noHistory')}</div>`;
-        return;
-      }
-
-      historyList.innerHTML = "";
-      displayHistory.slice().reverse().forEach(item => {
-        const div = document.createElement("div");
-        div.className = "history-item";
-        div.innerHTML = `<strong>${item.time}</strong><ul>${item.items.map(x => `<li>${x}</li>`).join("")}</ul>`;
-        historyList.appendChild(div);
-      });
-    }
-
-    function pick() {
-      const lines = menuInput.value.split("\n").map(s => s.trim()).filter(s => s);
-      const count = Math.min(parseInt(countInput.value), lines.length);
-      if (!lines.length) return alert(t('alertNoMenu'));
-
-      localStorage.setItem("menuList", menuInput.value);
-
-      const temp = [...lines];
-      const picked = [];
-      for (let i = 0; i < count; i++) {
-        const index = Math.floor(Math.random() * temp.length);
-        picked.push(temp.splice(index, 1)[0]);
-      }
-
-      const now = new Date().toLocaleString();
-      resultDiv.innerHTML =
-        `<h2>${t('resultTitle').replace('{time}', now)}</h2><ul>${picked.map(item => `<li>${item}</li>`).join("")}</ul>`;
-      resultDiv.style.display = "block";
-
-      let history = JSON.parse(localStorage.getItem("mealHistory") || "[]");
-      history.push({ time: now, items: picked });
-      if (history.length > maxHistory) {
-        history = history.slice(history.length - maxHistory);
-      }
-      localStorage.setItem("mealHistory", JSON.stringify(history));
-
-      loadHistory(true); // 不显示刚刚这条
-    }
-
-    // Auto-save functionality
-    let saveTimeout;
-
-    function showSaveStatus(text, className = '') {
-      const saveStatus = document.getElementById('saveStatus');
-      saveStatus.textContent = text;
-      saveStatus.className = `save-status show ${className}`;
-    }
-
-    function hideSaveStatus() {
-      const saveStatus = document.getElementById('saveStatus');
-      saveStatus.className = 'save-status';
-    }
-
-    function autoSave() {
-      // Clear any existing timeout
-      if (saveTimeout) {
-        clearTimeout(saveTimeout);
-      }
-
-      // Show saving status immediately
-      showSaveStatus(t('saveStatus'), 'saving');
-
-      // Set a timeout to save after user stops typing
-      saveTimeout = setTimeout(() => {
-        localStorage.setItem("menuList", menuInput.value);
-        
-        // Show saved status
-        showSaveStatus(t('savedStatus'), 'saved');
-        
-        // Hide status after 2 seconds
-        setTimeout(hideSaveStatus, 2000);
-      }, 800); // Wait 800ms after user stops typing
-    }
-
-    function saveCount() {
-      localStorage.setItem("dishCount", countInput.value);
-    }
-
-    // Setup auto-save listeners
-    function setupAutoSave() {
-      menuInput.addEventListener('input', autoSave);
-      menuInput.addEventListener('paste', autoSave);
-      countInput.addEventListener('change', saveCount);
-      countInput.addEventListener('input', saveCount);
-    }
-
-    window.onload = function () {
-      detectLanguage();
-      detectTheme();
-      updateUILanguage();
-      loadSavedMenu();
-      loadSavedCount();
-      loadHistory();
-      setupAutoSave();
-    };
-  </script>
-</body>
+    <script src="js/wheel.js" defer></script>
+    <script src="js/app.js" defer></script>
+  </body>
 </html>
